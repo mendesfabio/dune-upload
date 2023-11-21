@@ -34,6 +34,12 @@ runs:
         DESCRIPTION="${{ inputs.description }}"
         IS_PRIVATE="${{ inputs.is_private }}"
 
+        # Check if CSV file exists
+        if [ ! -f "$CSV_FILE_PATH" ]; then
+          echo "CSV file not found: ${{ inputs.csv_file_path }}"
+          exit 1
+        fi
+
         # Convert CSV file content to a string
         CSV_CONTENT=$(cat "$CSV_FILE_PATH")
 
@@ -46,8 +52,18 @@ runs:
           '{table_name: $tn, description: $desc, data: $data, is_private: $isPrivate}')
 
         # API request
-        curl -X POST https://api.dune.com/api/v1/table/upload/csv \
+        API_RESPONSE=$(curl -X POST https://api.dune.com/api/v1/table/upload/csv \
           -H "X-Dune-Api-Key: $DUNE_API_KEY" \
           -H "Content-Type: application/json" \
-          -d "$JSON_PAYLOAD"
+          -d "$JSON_PAYLOAD" 2>&1)
+
+        # Check if the API request was successful (HTTP status code 2xx)
+        if [[ ! "$API_RESPONSE" =~ ^HTTP/[0-9\.]+[[:space:]]2[0-9][0-9] ]]; then
+          echo "API request failed: $API_RESPONSE"
+          exit 1
+        fi
+
+        # Log the API response
+        echo "API response: $API_RESPONSE"
+        
       shell: bash
