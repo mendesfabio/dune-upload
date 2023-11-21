@@ -1,0 +1,53 @@
+name: 'Dune Upload'
+description: 'Uploads a CSV file to the Dune API'
+branding:
+  icon: 'upload-cloud'
+  color: 'orange'
+inputs:
+  dune_api_key:
+    description: 'API key for authenticating with the Dune API'
+    required: true
+  csv_file_path:
+    description: 'Path to the CSV file to upload'
+    required: true
+  table_name:
+    description: 'The target table in the database where the CSV data should be uploaded'
+    required: true
+  description:
+    description: 'A brief description of the uploaded data. Will be displayed in the Dune UI in the future'
+    required: false
+  is_private:
+    description: 'Whether the data should be private or not. Defaults to false'
+    required: false
+    default: 'false'
+runs:
+  using: 'composite'
+  steps:
+    - run: |
+        #!/bin/bash
+        set -e
+
+        # Reading inputs
+        DUNE_API_KEY="${{ inputs.dune_api_key }}"
+        CSV_FILE_PATH="${{ inputs.csv_file_path }}"
+        TABLE_NAME="${{ inputs.table_name }}"
+        DESCRIPTION="${{ inputs.description }}"
+        IS_PRIVATE="${{ inputs.is_private }}"
+
+        # Convert CSV file content to a string
+        CSV_CONTENT=$(cat "$CSV_FILE_PATH")
+
+        # Prepare JSON payload
+        JSON_PAYLOAD=$(jq -n \
+          --arg tn "$TABLE_NAME" \
+          --arg desc "$DESCRIPTION" \
+          --arg data "$CSV_CONTENT" \
+          --argjson isPrivate $([[ "$IS_PRIVATE" == "true" ]] && echo true || echo false) \
+          '{table_name: $tn, description: $desc, data: $data, is_private: $isPrivate}')
+
+        # API request
+        curl -X POST https://api.dune.com/api/v1/table/upload/csv \
+          -H "X-Dune-Api-Key: $DUNE_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d "$JSON_PAYLOAD"
+      shell: bash
