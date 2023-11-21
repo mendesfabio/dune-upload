@@ -24,8 +24,6 @@ runs:
   using: 'composite'
   steps:
     - run: |
-        #!/bin/bash
-        set -e
 
         # Reading inputs
         DUNE_API_KEY="${{ inputs.dune_api_key }}"
@@ -41,7 +39,7 @@ runs:
         fi
 
         # Convert CSV file content to a string
-        CSV_CONTENT=$(cat "$CSV_FILE_PATH")
+        CSV_CONTENT=$(cat $CSV_FILE_PATH)
 
         # Prepare JSON payload
         JSON_PAYLOAD=$(jq -n \
