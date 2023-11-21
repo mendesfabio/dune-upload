@@ -27,14 +27,14 @@ runs:
 
         # Reading inputs
         DUNE_API_KEY="${{ inputs.dune_api_key }}"
-        CSV_FILE_PATH="${{ inputs.csv_file_path }}"
+        fo="${{ inputs.csv_file_path }}"
         TABLE_NAME="${{ inputs.table_name }}"
         DESCRIPTION="${{ inputs.description }}"
         IS_PRIVATE="${{ inputs.is_private }}"
 
         # Check if CSV file exists
         if [ ! -f "$CSV_FILE_PATH" ]; then
-          echo "CSV file not found: ${{ inputs.csv_file_path }}"
+          echo "CSV file not found: $CSV_FILE_PATH"
           exit 1
         fi
 
@@ -49,19 +49,26 @@ runs:
           --argjson isPrivate $([[ "$IS_PRIVATE" == "true" ]] && echo true || echo false) \
           '{table_name: $tn, description: $desc, data: $data, is_private: $isPrivate}')
 
-        # API request
-        API_RESPONSE=$(curl -X POST https://api.dune.com/api/v1/table/upload/csv \
+        # Make the API request and capture the response 
+        API_RESPONSE=$(curl -sS -w "HTTP_STATUS_CODE:%{http_code}" -X POST https://api.dune.com/api/v1/table/upload/csv \
           -H "X-Dune-Api-Key: $DUNE_API_KEY" \
           -H "Content-Type: application/json" \
-          -d "$JSON_PAYLOAD" 2>&1)
+          -d "$JSON_PAYLOAD")
 
-        # Check if the API request was successful (HTTP status code 2xx)
-        if [[ ! "$API_RESPONSE" =~ ^HTTP/[0-9\.]+[[:space:]]2[0-9][0-9] ]]; then
-          echo "API request failed: $API_RESPONSE"
+        # Extract the HTTP status code from the response
+        HTTP_STATUS=$(echo "$response" | tr -d '\n' | sed -e 's/.*HTTP_STATUS_CODE://')
+
+        # Extract the response body (excluding the status line)
+        RESPONSE_BODY=$(echo "$response" | sed -e 's/HTTP_STATUS_CODE.*//')
+
+        # Check if the HTTP status code is in the 2xx range
+        if [[ "$HTTP_STATUS" =~ ^2[0-9][0-9]$ ]]; then
+          echo "API request was successful (HTTP $HTTP_STATUS)"
+          echo "API response body: $RESPONSE_BODY"
+        else
+          echo "API request failed (HTTP $HTTP_STATUS)"
+          echo "API response: $RESPONSE_BODY"
           exit 1
         fi
-
-        # Log the API response
-        echo "API response: $API_RESPONSE"
         
       shell: bash
