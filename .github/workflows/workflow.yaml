@@ -1,0 +1,17 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  dune-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Dune Upload
+        uses: mendesfabio/dune-upload@v0.1.0
+        with:
+          dune_api_key: "{{ secrets.DUNE_API_KEY }}"
+          csv_file_path: "foo.csv"
+          table_name: "abcddd"
+          description: "dce"
