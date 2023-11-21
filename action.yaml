@@ -27,7 +27,7 @@ runs:
 
         # Reading inputs
         DUNE_API_KEY="${{ inputs.dune_api_key }}"
-        fo="${{ inputs.csv_file_path }}"
+        CSV_FILE_PATH="${{ inputs.csv_file_path }}"
         TABLE_NAME="${{ inputs.table_name }}"
         DESCRIPTION="${{ inputs.description }}"
         IS_PRIVATE="${{ inputs.is_private }}"
